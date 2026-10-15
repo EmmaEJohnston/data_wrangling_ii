@@ -4,3 +4,186 @@ author: "Emma"
 date: "2026-10-15"
 output: github_document
 ---
+# Reading data from the web 
+
+Two major paths: 
+
+* data included as content on a webpage, and you want to "Scrape" those data 
+
+  * table from Wikipedia 
+  * reviews from Amazon 
+  * cast and characters on IMBD 
+
+* There's a dedicated server holding data in a relatively usable form, and you want to ask for those data 
+
+  * open NYC data 
+  * Data.gov 
+  * Star Wars API 
+  
+## Scraping web content 
+
+* Webpages combine HTML (content) and CSS (styling) to produce what you see. 
+* When you retrieve the HTML for a page with data you want, you've retrieved the data. 
+* There's also a lot of other stuff, so the challenge is extracting what you want from HTML
+
+CSS Selectors 
+
+* because CSS controls appearances, CSS identifiers appear throughout HTML code 
+* HTML elemets you care about frequently have unique identifiers 
+* extracting what you want from HTML is often a question of selecting against CSS tags 
+* To do this, use Selector Gadget
+  * in a browser, go to page you care about and launch Selector Gadget 
+  * click on thinks you want, unclick what you don't 
+  
+Scraping data into R 
+
+* rvest facilitates web scraping 
+* workflow 
+  * download HTML using read_html()
+  * extract elements using html_elements() and CSS selector 
+  * extract HTMl stuff you want 
+  
+## APIs 
+
+* Application Programming Interfaces provide a way to communicate with the software 
+* web APIs may give you a way to request specific data from a server 
+* web APIs not uniform 
+* this means that what is returned by one API will differ from what is returned by another API 
+* often either get CSV or Java Script Object Notation (JSON) (extremely common data format) 
+
+Getting data from the web is messy! 
+
+```{r}
+library(tidyverse)
+library(rvest)
+library(httr)
+```
+
+```{r}
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+```
+
+# Extracting tables 
+
+```{r}
+url = "https://www.samhsa.gov/data/sites/default/files/NSDUHsaeShortTermCHG2015/NSDUHsaeShortTermCHG2015.htm" 
+
+drug_use_html = 
+  read_html(url)
+```
+
+## Pull the tables out 
+
+```{r}
+drug_use_html |> 
+  html_table()
+```
+
+```{r}
+marj_df = 
+  drug_use_html |> 
+  html_table() |> 
+  first () |> #first element of list to pull out
+  slice(-1) #subtract out the first row, got rid of the NOTE row 
+```
+There's a lot of tidying to do, but we'll figure that out next class 
+
+## Import some Star Wars data
+
+Pull in the HTML 
+read_html_live is experimental package, uses Chrome in the background 
+This was not working - update R, install chromote 
+```{r}
+swm_html = 
+  read_html_live("https://www.imdb.com/list/ls070150896/")
+```
+
+selector gadget 
+
+```{r}
+swm_title_vec = 
+  swm_html |> 
+  html_elements(".ipc-title-link-wrapper .ipc-title__text") |> 
+  html_text() #just gives text from 
+
+swm_metascore_vec = 
+  swm_html |> 
+  html_elements(".metacritic-score-box") |> 
+  html_text() 
+
+swm_runtime_vec = 
+  swm_html |> 
+  html_elements(".ipc-inline-list__item:nth-child(2)") |> 
+  html_text() 
+
+```
+
+```{r}
+swm_df = 
+  tibble(
+    title = swm_title_vec, 
+    score = swm_metascore_vec, 
+    runtime = swm_runtime_vec
+  )
+```
+
+## NYC water using API 
+Getting a CSV 
+```{r}
+nyc_water_df = 
+  GET("https://data.cityofnewyork.us/api/v3/views/ia2d-e54m/query.csv") |> 
+  content("parsed") |>  #take a guess and pull out what you think I want
+  select(year:per_capita_gallons_per_person_per_day)
+```
+Go to export on website --> API endpoint --> CSV --> copy API endpoint 
+You should really only import HTML once, that process is not free. separate out that part of the code 
+
+Getting a JSON file - CSV is better if there's an option for it 
+```{r}
+nyc_water_json = 
+  GET("https://data.cityofnewyork.us/api/v3/views/ia2d-e54m/query.json") 
+
+nyc_water_json |> 
+  content("text") |> 
+  jsonlite::fromJSON() |> 
+  as_tibble() |> 
+  select(year:per_capita_gallons_per_person_per_day)
+```
+
+Look at Pokemon! 
+
+```{r}
+pokemon_json = 
+  GET("https://pokeapi.co/api/v2/pokemon/1")
+```
+
+Extracting data from JSON file about the first pokemon (bulbasaur)
+```{r}
+pokemon_data = 
+  pokemon_json |> 
+  content()
+
+pokemon_data[["name"]]
+pokemon_data[["height"]]
+pokemon_data[["abilities"]]
+
+```
+
+
+
+
+
