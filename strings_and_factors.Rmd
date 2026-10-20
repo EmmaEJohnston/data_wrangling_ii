@@ -1,0 +1,22 @@
+---
+title: "strings_and_factors"
+author: "Emma"
+date: "2026-10-20"
+output: github_document
+---
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+data("starwars")
+```
+
+```{r}
+starwars |> 
+  filter(name == "Luke Skywalker") |> 
+  select(name, height, films) |> 
+  unnest(films)
+```
+Unnest to see all of the different films
