@@ -271,3 +271,65 @@ as.numeric(vec_sex) # converts into level numbers
 ``` r
 vec_sex = fct_relevel(vec_sex, "male") #telling that male is first. this changes the numeric thing hiding behind the labels, not labels themselves  
 ```
+
+# examples
+
+``` r
+nsduh_url = "https://www.samhsa.gov/data/sites/default/files/NSDUHsaeShortTermCHG2015/NSDUHsaeShortTermCHG2015.htm"
+```
+
+Cleaning up the data set using string stuff:
+
+``` r
+table_marj = 
+  read_html(nsduh_url) |> 
+  html_table() |> 
+  first() |>
+  slice(-1) |> 
+  select(-contains("P Value")) |>  # got rid of everything containing p value 
+  pivot_longer(
+    -State, # pivot everything other than State 
+    names_to = "age_year", 
+    values_to = "prev"
+  ) |> 
+  separate(age_year, into = c("age", "year"), sep = "\\(") |>  # separating this column into two new columns at the "(", have to use two backslashes to indicate not protected character here 
+  mutate(
+    year = str_replace(year, "\\)", ""), #replacing ) with nothing 
+    prev = str_replace(prev, "[a-c]", ""), # replacing a - c with nothing
+    prev = as.numeric(prev)
+  )
+```
+
+In the past we used “separate” function, but here we want to split at
+the parentheses
+
+make a quick plot
+
+``` r
+table_marj |> 
+  filter(age == "12-17") |> 
+  mutate(State = fct_reorder(State, prev)) |> # order state according to prev, replot to make pretty
+  ggplot(aes(x = State, y = prev, color = year)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) #hjust brings them all aligned 
+```
+
+<img src="strings_and_factors_files/figure-gfm/unnamed-chunk-14-1.png" alt="" width="90%" />
+
+## NYC airbnb
+
+``` r
+data(nyc_airbnb)
+
+nyc_airbnb |> 
+  filter(neighbourhood_group == "Manhattan", 
+         price < 1000) |> 
+  mutate(neighbourhood = fct_reorder(neighbourhood, price)) |> #order neighbourhood by price
+  ggplot(aes(x = neighbourhood, y = price)) +
+  geom_boxplot() +
+  coord_flip() # flips x and y axes
+```
+
+<img src="strings_and_factors_files/figure-gfm/unnamed-chunk-15-1.png" alt="" width="90%" />
+
+## restaurant inspections
