@@ -4,6 +4,7 @@ author: "Emma"
 date: "2026-10-20"
 output: github_document
 ---
+FOR MIDTERM, MAKE PRIVATE BUT ADD THEM AS COLLABORATOR. 500 word limit on report!  
 
 ## Strings vs Factors 
 
@@ -235,8 +236,94 @@ nyc_airbnb |>
 
 ## restaurant inspections 
 
+```{r}
+data("rest_inspec")
+
+rest_inspec = 
+    rest_inspec |> 
+    rename(borough = boro)
+
+rest_inspec |> 
+  group_by(borough, grade) |> 
+  summarize(n = n()) |> 
+  pivot_wider(names_from = grade, values_from = n)
+```
+
+```{r}
+rest_inspec =
+  rest_inspec |>
+  filter(grade %in% c("A", "B", "C"), borough != "Missing") |> 
+  mutate(borough = str_to_title(borough))
+```
+
+```{r}
+rest_inspec |> 
+  filter(str_detect(dba, "Pizza")) |> 
+  group_by(borough, grade) |> 
+  summarize(n = n()) |> 
+  pivot_wider(names_from = grade, values_from = n)
+```
+can't just look for Pizza, gonna miss some stuff because of cases 
+
+This is better: 
+```{r}
+rest_inspec |> 
+  filter(str_detect(dba, "[Pp][Ii][Zz][Zz][Aa]")) |> 
+  group_by(borough, grade) |> 
+  summarize(n = n()) |> 
+  pivot_wider(
+    names_from = grade, 
+    values_from = n
+    )
+```
 
 
+```{r}
+rest_inspec |> 
+  mutate(dba = str_to_upper(dba)) |> # or just make all uppercase
+  filter(str_detect(dba, "PIZZA")) |> 
+  group_by(borough, grade) |> 
+  summarize(n = n()) |> 
+  pivot_wider(
+    names_from = grade, 
+    values_from = n
+    )
+```
 
+```{r}
+rest_inspec |> 
+  mutate(dba = str_to_upper(dba)) |> 
+  filter(str_detect(dba, "PIZZA")) |>
+  ggplot(aes(x = borough, fill = grade)) +
+  geom_bar()
+```
 
+```{r}
+rest_inspec |> 
+  mutate(dba = str_to_upper(dba), 
+         borough = fct_infreq(borough)) |>  # put borough variable in order of how common they are
+  filter(str_detect(dba, "PIZZA")) |>
+  ggplot(aes(x = borough, fill = grade)) +
+  geom_bar()
+```
 
+```{r}
+rest_inspec |> 
+  mutate(dba = str_to_upper(dba), 
+         borough = fct_infreq(borough), # put borough variable in order of how common they are
+         borough = str_replace(borough, "Manhattan", "The City")) |> #when you do this, makes the city back into character variable, so it does not take fct infreq into account anymore 
+  filter(str_detect(dba, "PIZZA")) |>
+  ggplot(aes(x = borough, fill = grade)) +
+  geom_bar()
+```
+
+do this instead 
+```{r}
+rest_inspec |> 
+  mutate(dba = str_to_upper(dba), 
+         borough = fct_infreq(borough), # put borough variable in order of how common they are
+         borough = fct_recode(borough, "The City" = "Manhattan")) |> #recode as factor variable
+  filter(str_detect(dba, "PIZZA")) |>
+  ggplot(aes(x = borough, fill = grade)) +
+  geom_bar()
+```
