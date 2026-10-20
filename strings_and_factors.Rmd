@@ -5,6 +5,59 @@ date: "2026-10-20"
 output: github_document
 ---
 
+## Strings vs Factors 
+
+Both look like character vectors but: 
+
+* strings are just strings 
+* factors have an underlying numeric structure with character labels sitting on top 
+
+Factors generally make sense for variables that take on a few meaningful values 
+
+* scales (very bad, bad, okay, good, very good)
+* race 
+* BMI category
+
+Strings make sense for less structured character values 
+
+Base R had some biases towards factors 
+
+## Common string operations 
+There are lots of things you can do with strings 
+some are very common: 
+
+* concatenating: joining snippets into a long string 
+* shortening, subsetting, truncating 
+* changing cases
+* replacing one string segment with another 
+
+All in stringr package (in tidyverse)
+
+## Regular expressions 
+
+String operations are easy when you know what you're looking for 
+when you know a general pattern but not an exact match, you need to use regular expressions 
+
+* instead of looking for the letter "a", you might look for any string that starts with a lower-case vowel 
+
+## Factors 
+
+Controlling factors is critical for several situations 
+
+* defining reference group in models 
+* ordering vartiables in output (tables or plots)
+* introducing new factor levels 
+
+Commons factor operations 
+
+* converting characters to factors 
+* re leveling by hand or by count or by second variable 
+* renaming levels 
+* dropping unused levels 
+
+The forcats package to go for the majority of your factor needs 
+
+
 ```{r}
 library(tidyverse)
 ```
@@ -20,3 +73,6 @@ starwars |>
   unnest(films)
 ```
 Unnest to see all of the different films
+
+
+
